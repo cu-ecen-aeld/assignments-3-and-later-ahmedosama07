@@ -1,8 +1,10 @@
 #include "systemcalls.h"
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdarg.h>
 #include <stdlib.h>
 /**
  * @param cmd the command to execute with system()
@@ -86,32 +88,16 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
     // and may be removed
     command[count] = command[count];
 
-    pid_t pid = fork();
-    if (pid == -1) {
-        va_end(args);
-        return false;
-    } else if (pid == 0) {
-        // Child process
-        int fd = open(outputfile, O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU);
-        if (fd == -1) {
-            exit(EXIT_FAILURE);
-        }
-        if (dup2(fd, STDOUT_FILENO) == -1) {
-            close(fd);
-            exit(EXIT_FAILURE);
-        }
-        close(fd);
-        execv(command[0], command);
-        // If execv returns, it must have failed
-        exit(EXIT_FAILURE);
-    } else {
-        // Parent process
-        int status;
-        if (waitpid(pid, &status, 0) == -1) {
-            va_end(args);
-            return false;
-        }
-        va_end(args);
-        return WIFEXITED(status) && WEXITSTATUS(status) == 0;
-    }
+
+/*
+ * TODO
+ *   Call execv, but first using https://stackoverflow.com/a/13784315/1446624 as a refernce,
+ *   redirect standard out to a file specified by outputfile.
+ *   The rest of the behaviour is same as do_exec()
+ *
+*/
+
+    va_end(args);
+
+    return true;
 }
